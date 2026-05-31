@@ -386,20 +386,24 @@ function excelDateToJS(serial) {
 async function fetchData() {
   setLoading("Caricamento dati...");
   try {
-    const res = await fetch('data/dati.json?_=' + Date.now());
-    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 4000);
+    const res = await fetch("data/dati.json?_=" + Date.now(), {signal: controller.signal});
+    clearTimeout(timeout);
+    if (!res.ok) throw new Error("HTTP " + res.status);
     const json = await res.json();
     const rows = (json.rows || []).map(r => ({
       ...r,
       ultimoAgg: excelDateToJS(r.ultimoAgg),
       prossAgg:  excelDateToJS(r.prossAgg),
     }));
+    if (!rows.length) throw new Error("empty");
     setBadge("live", "Dati aggiornati · " + rows.length + " righe");
     hideLoading();
     return rows;
   } catch(e) {
     console.warn("dati.json non trovato, uso fallback:", e.message);
-    setBadge("mock", "Dati di esempio (offline)");
+    setBadge("mock", "Dati di esempio (SharePoint offline)");
     hideLoading();
     return FALLBACK;
   }
