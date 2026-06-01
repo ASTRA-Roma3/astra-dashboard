@@ -1,0 +1,25 @@
+name: Update Dashboard Data
+
+on:
+  repository_dispatch:
+    types: [update-data]
+
+jobs:
+  update-json:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Write dati.json
+        run: |
+          mkdir -p data
+          echo '${{ toJson(github.event.client_payload) }}' > data/dati.json
+
+      - name: Commit and push
+        run: |
+          git config user.name "ASTRA-Bot"
+          git config user.email "astra-bot@uniroma3.it"
+          git add data/dati.json
+          git diff --staged --quiet || git commit -m "Auto-update dati.json [$(date -u '+%Y-%m-%d %H:%M UTC')]"
+          git push
